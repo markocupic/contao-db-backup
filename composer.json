@@ -1,0 +1,40 @@
+{
+    "name":"markocupic/contao-db-backup",
+    "description":"Store a daily backup of your contao db to the contao file system.",
+    "keywords":["contao", "database", "backup"],
+    "type":"contao-module",
+    "license":"LGPL-3.0+",
+    "authors":[
+        {
+            "name":"Marko Cupic",
+            "email":"m.cupic@gmx.ch",
+            "homepage":"https://github.com/markocupic",
+            "role":"Developer"
+        }
+    ],
+    "support":{
+        "issues":"https://github.com/markocupic/contao-db-backup/issues",
+        "source":"https://github.com/markocupic/contao-db-backup"
+    },
+    "require":{
+        "php":">=5.3",
+        "contao/core":">=3.2,<4",
+        "contao-community-alliance/composer-plugin": "*"  
+    },
+    "replace": {
+        "contao-legacy/contao-db-backup":"*"
+    },
+    "conflict": {
+        "contao/core": "3.0.*"
+    },
+    "autoload":{
+        "classmap":[""]
+    },
+    "extra":{
+        "contao":{
+            "sources":{
+                "":"system/modules/contao-db-backup"
+            }
+        }
+    }
+}
