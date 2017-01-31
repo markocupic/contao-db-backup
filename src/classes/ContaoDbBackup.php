@@ -2,9 +2,21 @@
 
 namespace ContaoDbBackup;
 
-require_once(TL_ROOT . '/vendor/pclzip/pclzip/pclzip.lib.php');
-
-use PclZip;
+// Contao <= 4.0
+if (is_file(TL_ROOT . '/vendor/pclzip/pclzip/pclzip.lib.php'))
+{
+    require_once(TL_ROOT . '/vendor/pclzip/pclzip/pclzip.lib.php');
+    use PclZip;
+}
+// Contao < 4
+elseif (is_file(TL_ROOT . '/composer/vendor/pclzip/pclzip/pclzip.lib.php'))
+{
+    require_once(TL_ROOT . '/composer/vendor/pclzip/pclzip/pclzip.lib.php');
+}
+else
+{
+    return; 
+}
 
 
 /**
