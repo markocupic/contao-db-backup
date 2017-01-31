@@ -2,7 +2,10 @@
 
 namespace ContaoDbBackup;
 
+require_once(TL_ROOT . '/vendor/pclzip/pclzip/pclzip.lib.php');
+
 use PclZip;
+
 
 /**
  * ContaoDbBackup

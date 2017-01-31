@@ -12,6 +12,9 @@
             "role":"Developer"
         }
     ],
+    "require": {
+        "pclzip/pclzip": "~2"
+    },
     "support":{
         "issues":"https://github.com/markocupic/contao-db-backup/issues",
         "source":"https://github.com/markocupic/contao-db-backup"
