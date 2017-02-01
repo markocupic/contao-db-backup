@@ -22,11 +22,7 @@
   },
   "require": {
     "php": ">=5.3",
-    "contao/core": ">=3.5",
     "pclzip/pclzip": "~2"
-  },
-  "replace": {
-    "contao-legacy/contao-db-backup": "*"
   },
   "autoload": {
     "classmap": [
