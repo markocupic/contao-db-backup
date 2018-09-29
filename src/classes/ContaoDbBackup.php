@@ -1,22 +1,12 @@
 <?php
 
 namespace ContaoDbBackup;
-use PclZip;
 
-// Contao <= 4.0
-if (is_file(TL_ROOT . '/vendor/pclzip/pclzip/pclzip.lib.php'))
-{
-    require_once(TL_ROOT . '/vendor/pclzip/pclzip/pclzip.lib.php');
-}
-// Contao < 4
-elseif (is_file(TL_ROOT . '/composer/vendor/pclzip/pclzip/pclzip.lib.php'))
-{
-    require_once(TL_ROOT . '/composer/vendor/pclzip/pclzip/pclzip.lib.php');
-}
-else
-{
-    return; 
-}
+use PclZip;
+use Contao\Folder;
+use Contao\System;
+use Contao\File;
+use Contao\Dbafs;
 
 
 /**
@@ -28,7 +18,7 @@ else
  * @link    http://www.contao.org
  * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
  */
-class ContaoDbBackup extends \System
+class ContaoDbBackup extends System
 {
 
     public function doDbBackup()
@@ -39,13 +29,12 @@ class ContaoDbBackup extends \System
         $pw = $GLOBALS['TL_CONFIG']['dbPass'];
         $db = $GLOBALS['TL_CONFIG']['dbDatabase'];
         $keepBackupFiles = intval($GLOBALS['TL_CONFIG']['ContaoDbBackup']['keepBackupFiles']) > 0 ? intval($GLOBALS['TL_CONFIG']['ContaoDbBackup']['keepBackupFiles']) * 60 * 90 * 24 : 60 * 90 * 24 * 60; //default 60 days
-
         $filename = 'contao_db_backup' . date("Y_m_d") . '.sql';
         $backupDir = $GLOBALS['TL_CONFIG']['uploadPath'] . '/contao_db_backup';
         $src_temp = $backupDir . '/' . $filename;
         $src_zip = $backupDir . '/' . $filename . '.zip';
 
-        new \Folder($backupDir);
+        new Folder($backupDir);
 
         //Wenn Backup schon existiert, dann weiter
         if (!file_exists(TL_ROOT . '/' . $src_zip))
@@ -56,7 +45,7 @@ class ContaoDbBackup extends \System
             {
                 if (strncmp('.', $strFile, 1) !== 0 && is_file(TL_ROOT . '/' . $backupDir . '/' . $strFile))
                 {
-                    $objFile = new \File($backupDir . '/' . $strFile);
+                    $objFile = new File($backupDir . '/' . $strFile);
                     if ($objFile->mtime > 0)
                     {
                         if (time() - $objFile->mtime > $keepBackupFiles)
@@ -70,8 +59,10 @@ class ContaoDbBackup extends \System
             //SQL-Dump
             if (strlen($pw))
             {
-                $sqlcommand = 'mysqldump -h ' . $host . ' -u ' . $user . ' -p' . $pw . ' ' . $db . ' > ' . TL_ROOT . '/' . $src_temp;
+                $sqlcommand = '/usr/bin/mysqldump -h ' . $host . ' -u ' . $user . ' -p"' . $pw . '" ' . $db . ' > ' . TL_ROOT . '/' . $src_temp;
+
                 exec($sqlcommand);
+
                 if (file_exists(TL_ROOT . '/' . $src_temp))
                 {
                     $archive = new PclZip(TL_ROOT . '/' . $src_zip);
@@ -80,10 +71,10 @@ class ContaoDbBackup extends \System
                     {
                         die("Error : " . $archive->errorInfo(true));
                     }
-                    \Dbafs::addResource($src_zip, true);
+                    Dbafs::addResource($src_zip, true);
 
                     // Delete temp file
-                    $objTempFile = new \File($src_temp);
+                    $objTempFile = new File($src_temp);
                     $objTempFile->delete();
                 }
             }

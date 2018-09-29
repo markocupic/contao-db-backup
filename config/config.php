@@ -13,5 +13,6 @@
 // Keep Backup Files 30 d on the server
 $GLOBALS['TL_CONFIG']['ContaoDbBackup']['keepBackupFiles'] = 30;
 
-$GLOBALS['TL_HOOKS']['generatePage'][] = array('ContaoDbBackup\ContaoDbBackup', 'doDbBackup');
+// Cronjob
+$GLOBALS['TL_CRON']['daily']['doDbBackup'] = array('ContaoDbBackup\ContaoDbBackup', 'doDbBackup');
 
