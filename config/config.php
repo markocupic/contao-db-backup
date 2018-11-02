@@ -1,18 +1,18 @@
 <?php
 
 /**
- * DbBackup
+ * Contao Db Backup
  *
- * Copyright (C) 2005-2012 Leo Feyer
+ * Copyright (C) 2018 Marko Cupic
  *
- * @package my_db_backup
+ * @package contao-db-backup
  * @link    http://www.contao.org
  * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
  */
 
-// Keep Backup Files 30 d on the server
-$GLOBALS['TL_CONFIG']['ContaoDbBackup']['keepBackupFiles'] = 30;
+// Keep backup files for 30 days on the server
+$GLOBALS['TL_CONFIG']['contaoDbBackupKeepBackupFiles'] = 30;
 
-// Cronjob
-$GLOBALS['TL_CRON']['daily']['doDbBackup'] = array('ContaoDbBackup\ContaoDbBackup', 'doDbBackup');
+// TL_CRON
+$GLOBALS['TL_CRON']['daily']['doContaoDbBackup'] = array('ContaoDbBackup\ContaoDbBackup', 'doDbBackup');
 
