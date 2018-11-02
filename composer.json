@@ -22,14 +22,7 @@
   },
   "require": {
     "php": ">=5.3",
-    "contao/core-bundle": ">=4.3",
-    "contao-community-alliance/composer-plugin": "^2.4.0 || 3.*"
-  },
-  "replace": {
-    "contao-legacy/contao-db-backup": "*"
-  },
-  "conflict": {
-    "contao/core": "3.0.*"
+    "pclzip/pclzip": "~2"
   },
   "autoload": {
     "classmap": [
