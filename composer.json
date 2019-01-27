@@ -7,7 +7,7 @@
     "backup"
   ],
   "type": "contao-module",
-  "license": "LGPL-3.0+",
+  "license": "MIT",
   "authors": [
     {
       "name": "Marko Cupic",
@@ -21,7 +21,8 @@
     "source": "https://github.com/markocupic/contao-db-backup"
   },
   "require": {
-    "php": ">=5.3",
+    "contao/core-bundle": ">4.3",
+    "php": ">=7.0",
     "pclzip/pclzip": "~2"
   },
   "autoload": {
