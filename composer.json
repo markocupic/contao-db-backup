@@ -21,7 +21,8 @@
     "source": "https://github.com/markocupic/contao-db-backup"
   },
   "require": {
-    "contao/core-bundle": "^4.6"
+    "contao/core-bundle": "^4.4".
+    "pclzip/pclzip": "~2"
   },
   "autoload": {
     "psr-4": {
