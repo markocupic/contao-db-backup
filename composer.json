@@ -21,19 +21,24 @@
     "source": "https://github.com/markocupic/contao-db-backup"
   },
   "require": {
-    "contao/core-bundle": ">4.3",
-    "php": ">=7.0",
-    "pclzip/pclzip": "~2"
+    "contao/core-bundle": "^4.6"
   },
   "autoload": {
+    "psr-4": {
+      "Markocupic\\ContaoDbBackup\\": "src/"
+    },
     "classmap": [
-      ""
+      "src/Resources/contao"
+    ],
+    "exclude-from-classmap": [
+      "src/Resources/contao/config"
     ]
   },
   "extra": {
+    "contao-manager-plugin": "Markocupic\\ContaoDbBackup\\ContaoManager\\Plugin",
     "contao": {
       "sources": {
-        "": "system/modules/contao-db-backup"
+        "src/Resources/contao": "system/modules/contao-db-backup"
       }
     }
   }
