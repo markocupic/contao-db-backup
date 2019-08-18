@@ -3,11 +3,11 @@
 /**
  * Contao Db Backup
  *
- * Copyright (C) 2018 Marko Cupic
+ * Copyright (C) 2019 Marko Cupic
  *
  * @package contao-db-backup
- * @link    http://www.contao.org
- * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
+ * @link    https://github.com/markocupic/contao-db-backup
+ * @license MIT
  */
 
 namespace ContaoDbBackup;
@@ -19,33 +19,23 @@ use Contao\Folder;
 use Contao\System;
 use PclZip;
 
-// Contao <= 4.0
-if (is_file(TL_ROOT . '/vendor/pclzip/pclzip/pclzip.lib.php'))
-{
-    require_once(TL_ROOT . '/vendor/pclzip/pclzip/pclzip.lib.php');
-}
-// Contao < 4
-elseif (is_file(TL_ROOT . '/composer/vendor/pclzip/pclzip/pclzip.lib.php'))
-{
-    require_once(TL_ROOT . '/composer/vendor/pclzip/pclzip/pclzip.lib.php');
-}
-else
-{
-    return;
-}
-
-
 /**
  * Class ContaoDbBackup
  * @package ContaoDbBackup
  */
 class ContaoDbBackup
 {
+
     /**
      * @throws \Exception
      */
     public function doDbBackup()
     {
+        if (!$this->libraryCheck())
+        {
+            System::log("Couldn't proceed contao database backup due to missing pclzip library. Please install the library with 'composer require pclzip/pclzip'.", __METHOD__, TL_ERROR);
+            return;
+        }
 
         $host = Config::get('dbHost');
         $user = Config::get('dbUser');
@@ -63,7 +53,6 @@ class ContaoDbBackup
         {
             return;
         }
-
 
         // Delete old files
         $arrFiles = scan(TL_ROOT . '/' . $backupDir);
@@ -95,7 +84,8 @@ class ContaoDbBackup
                 $v_list = $archive->create(TL_ROOT . '/' . $src_temp);
                 if ($v_list == 0)
                 {
-                    die("Error : " . $archive->errorInfo(true));
+                    System::log("Couldn't proceed contao database backup due to an error: " . $archive->errorInfo(true) , __METHOD__, TL_ERROR);
+                    return;
                 }
                 Dbafs::addResource($src_zip, true);
 
@@ -104,9 +94,29 @@ class ContaoDbBackup
                 $objTempFile->delete();
 
                 // Log
-                System::log("Finished daily contao database backup ('" . $src_zip . "').", __METHOD__, TL_GENERAL);
+                System::log("Finished contao database backup and stored the db-dump in ('" . $src_zip . "').", __METHOD__, 'CONTAO_DB_BACKUP');
             }
         }
+    }
 
+    /**
+     * Check if PclZip library exists
+     * @return bool
+     */
+    protected function libraryCheck()
+    {
+        $libraryExists = true;
+        // Contao < 4.0
+        if (version_compare(VERSION, '4.0', '<'))
+        {
+            require_once(TL_ROOT . '/composer/vendor/pclzip/pclzip/pclzip.lib.php');
+        }
+
+        if (!class_exists('PclZip'))
+        {
+            $libraryExists = false;
+        }
+
+        return $libraryExists;
     }
 }

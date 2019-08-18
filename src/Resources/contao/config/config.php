@@ -3,11 +3,11 @@
 /**
  * Contao Db Backup
  *
- * Copyright (C) 2018 Marko Cupic
+ * Copyright (C) 2019 Marko Cupic
  *
  * @package contao-db-backup
- * @link    http://www.contao.org
- * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
+ * @link    https://github.com/markocupic/contao-db-backup
+ * @license MIT
  */
 
 // Keep backup files for 30 days on the server

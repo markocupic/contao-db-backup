@@ -1,9 +1,12 @@
 <?php
 /**
- * SAC Event Tool Web Plugin for Contao
- * Copyright (c) 2008-2019 Marko Cupic
+ * Contao Db Backup
+ *
+ * Copyright (C) 2019 Marko Cupic
+ *
  * @package contao-db-backup
- * @author Marko Cupic m.cupic@gmx.ch, 2019
+ * @link    http://www.contao.org
+ * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
  */
 
 namespace Markocupic\ContaoDbBackup\ContaoManager;
