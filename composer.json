@@ -33,6 +33,9 @@
         "symfony/phpunit-bridge": "^5.4",
         "contao/easy-coding-standard": "^5.0"
     },
+    "replace": {
+        "contao-legacy/contao-db-backup": "self.version"
+    },
     "config": {
         "allow-plugins": {
             "contao-components/installer": true,
