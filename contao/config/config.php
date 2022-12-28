@@ -12,14 +12,8 @@ declare(strict_types=1);
  * @link https://github.com/markocupic/contao-db-backup
  */
 
-namespace Markocupic\ContaoDbBackup;
+/**
+ * Keep backup files for 30 days on the server
+ */
+$GLOBALS['TL_CONFIG']['contaoDbBackupKeepBackupFiles'] = 30;
 
-use Symfony\Component\HttpKernel\Bundle\Bundle;
-
-class MarkocupicContaoDbBackup extends Bundle
-{
-    public function getPath(): string
-    {
-        return \dirname(__DIR__);
-    }
-}
