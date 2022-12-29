@@ -20,25 +20,28 @@ use Contao\CoreBundle\Monolog\ContaoContext;
 use Contao\Dbafs;
 use Contao\File;
 use Contao\Folder;
-use Contao\System;
-use Psr\Log\LogLevel;
+use Psr\Log\LoggerInterface;
 
 #[AsCronJob('daily')]
 class DatabaseBackup
 {
     private string $projectDir;
     private int $storeBackupFiles;
+    private LoggerInterface|null $contaoGeneralLogger;
+    private LoggerInterface|null $contaoErrorLogger;
 
-    public function __construct(string $projectDir, int $storeBackupFiles)
+    public function __construct(string $projectDir, int $storeBackupFiles, LoggerInterface|null $contaoGeneralLogger, LoggerInterface|null $contaoErrorLogger)
     {
         $this->projectDir = $projectDir;
         $this->storeBackupFiles = $storeBackupFiles * 24 * 60 * 60;
+        $this->contaoGeneralLogger = $contaoGeneralLogger;
+        $this->contaoErrorLogger = $contaoErrorLogger;
     }
 
     /**
      * @throws \Exception
      */
-    public function __invoke(): void
+    public function onDaily(): void
     {
         $filename = 'contao_db_backup'.date('Y_m_d').'.sql';
         $backupDir = Config::get('uploadPath').'/contao_db_backup';
@@ -59,8 +62,7 @@ class DatabaseBackup
         // Run db dump
         if (false === $this->dump($tempSrc)) {
             // Add an entry to the Contao system log.
-            $logger = System::getContainer()->get('monolog.logger.contao.error');
-            $logger->error('Could not proceed contao database backup due to an error.');
+            $this->contaoErrorLogger?->error('Could not proceed contao database backup due to an error.');
 
             return;
         }
@@ -74,8 +76,7 @@ class DatabaseBackup
 
             if (0 === $vList) {
                 // Add an entry to the Contao system log.
-                $logger = System::getContainer()->get('monolog.logger.contao.error');
-                $logger->error('Could not proceed contao database backup due to an error: '.$archive->errorInfo(true));
+                $this->contaoErrorLogger?->error('Could not proceed contao database backup due to an error: '.$archive->errorInfo(true));
 
                 return;
             }
@@ -87,9 +88,9 @@ class DatabaseBackup
             $objTempFile->delete();
 
             // Add an entry to the Contao system log.
-            $logger = System::getContainer()->get('monolog.logger.contao');
             $text = "Finished contao database backup and stored the database dump in ('".$zipSrc."').";
-            $logger->log(LogLevel::INFO, $text, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
+
+            $this->contaoGeneralLogger?->info($text, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
         }
     }
 
@@ -115,7 +116,7 @@ class DatabaseBackup
      */
     private function deleteOldBackupArchives(string $backupDir): void
     {
-        // Delete old files
+        // Delete database backup files
         $arrFiles = Folder::scan($this->projectDir.'/'.$backupDir);
 
         foreach ($arrFiles as $strFile) {
@@ -124,6 +125,8 @@ class DatabaseBackup
 
                 if ($objFile->mtime > 0) {
                     if (time() - $objFile->mtime > $this->storeBackupFiles) {
+                        $text = sprintf('Delete old database backup file "%s".', $objFile->path);
+                        $this->contaoGeneralLogger?->info($text, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
                         $objFile->delete();
                     }
                 }
