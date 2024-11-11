@@ -21,6 +21,7 @@ use Contao\File;
 use Contao\Folder;
 use Contao\System;
 use Doctrine\ORM\EntityManagerInterface;
+use Markocupic\ZipBundle\Zip\Zip;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Filesystem\Path;
 
@@ -77,15 +78,11 @@ class DatabaseBackupManager
         sleep(2);
 
         if (file_exists(Path::makeAbsolute($tempSrc, $this->projectDir))) {
-            $archive = new \PclZip(Path::makeAbsolute($zipSrc, $this->projectDir));
-            $vList = $archive->create(Path::makeAbsolute($tempSrc, $this->projectDir));
-
-            if (0 === $vList) {
-                $log = 'Could not proceed contao database backup due to an error: '.$archive->errorInfo(true);
-                $this->contaoGeneralLogger?->info($log, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
-
-                return;
-            }
+            (new Zip())
+                ->stripSourcePath(\dirname(Path::makeAbsolute($tempSrc, $this->projectDir)))
+                ->addFile(Path::makeAbsolute($tempSrc, $this->projectDir))
+                ->run(Path::makeAbsolute($zipSrc, $this->projectDir))
+             ;
 
             Dbafs::addResource($zipSrc);
 
