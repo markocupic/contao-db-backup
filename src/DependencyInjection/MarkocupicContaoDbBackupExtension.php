@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of Contao Database Backup.
  *
- * (c) Marko Cupic 2022 <m.cupic@gmx.ch>
+ * (c) Marko Cupic 2024 <m.cupic@gmx.ch>
  * @license MIT
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
@@ -22,14 +22,6 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 class MarkocupicContaoDbBackupExtension extends Extension
 {
     /**
-     * {@inheritdoc}
-     */
-    public function getAlias(): string
-    {
-        return Configuration::ROOT_KEY;
-    }
-
-    /**
      * @throws \Exception
      */
     public function load(array $configs, ContainerBuilder $container): void
@@ -42,9 +34,17 @@ class MarkocupicContaoDbBackupExtension extends Extension
             new FileLocator(__DIR__.'/../../config')
         );
 
-        $loader->load('services.yml');
+        $loader->load('services.yaml');
 
         $rootKey = $this->getAlias();
         $container->setParameter($rootKey.'.store_backup_files', $config['store_backup_files']);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getAlias(): string
+    {
+        return Configuration::ROOT_KEY;
     }
 }

@@ -6,6 +6,7 @@ Diese Contao Extension erzeugt via Cron Job täglich ein Datenbank-Backup und sp
 Damit das Plugin funktioniert, muss die Ausführung der PHP Funktion "exec()" auf dem Hosting freigeschaltet sein.
 
 ## Konfiguration
+
 Standardmässig bleiben die Backup-Dateien für 30 d auf dem Server und werden dann automatisch gelöscht.
 Die Zeit vor dem Löschvorgang kann jedoch konfiguriert werden.
 
