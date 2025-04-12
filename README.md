@@ -1,14 +1,14 @@
 ![Logo](https://github.com/markocupic/markocupic/blob/main/logo.png)
 
-# Tägliches Datenbank-Backup für Contao CMS
+# Daily database backup for Contao CMS
 
-Diese Contao Extension erzeugt via Cron Job täglich ein Datenbank-Backup und speichert dieses als SQL-Dump im Dateisystem ab.
-Damit das Plugin funktioniert, muss die Ausführung der PHP Funktion "exec()" auf dem Hosting freigeschaltet sein.
+This Contao extension creates a daily database backup via a cron job and saves it as an SQL dump in the file system.
+For the plugin to work, the execution of the PHP function “exec()” must be enabled on the hosting.
 
-## Konfiguration
+## Configuration
 
-Standardmässig bleiben die Backup-Dateien für 30 d auf dem Server und werden dann automatisch gelöscht.
-Die Zeit vor dem Löschvorgang kann jedoch konfiguriert werden.
+By default, the backup files remain on the server for 30 d and are then automatically deleted.
+However, the time before the deletion process can be configured.
 
 ```
 # In your config/config.yaml
