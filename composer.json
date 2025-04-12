@@ -23,7 +23,7 @@
     "require": {
         "php": "^8.1",
         "contao/core-bundle": "^4.13 || ^5.0",
-        "pclzip/pclzip": "^2.0"
+        "markocupic/zip-bundle": "^1.1"
     },
     "require-dev": {
         "contao/manager-plugin": "^2.3.1",
