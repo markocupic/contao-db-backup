@@ -20,10 +20,10 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class DbBackupCommand extends Command
+class DatabaseBackupCommand extends Command
 {
-    protected static $defaultName = 'contao:db-backup';
-    protected static $defaultDescription = 'Runs a db backup on the command line.';
+    protected static $defaultName = 'contao:markocupic-database-backup';
+    protected static $defaultDescription = 'Runs a database backup on the command line.';
 
     protected Cron $cron;
 

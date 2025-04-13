@@ -15,3 +15,6 @@ markocupic_contao_db_backup:
   store_backup_files: 60 # Store backup files for 60 days
   backup_dir: '%kernel.project_dir%/my_secret_db_backup_dir' # Default %kernel.project_dir%/files/contao-db-backup
 ```
+
+## Command
+To execute the database backup on the command line, you can run `php vendor/bin/contao-console contao:markocupic-database-backup`
