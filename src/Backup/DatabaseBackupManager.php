@@ -14,23 +14,31 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoDbBackup\Backup;
 
-use Contao\CoreBundle\Framework\ContaoFramework;
+use Contao\CoreBundle\Doctrine\Backup\Backup;
+use Contao\CoreBundle\Doctrine\Backup\BackupManager;
+use Contao\CoreBundle\Doctrine\Backup\Config\CreateConfig;
+use Contao\CoreBundle\Filesystem\VirtualFilesystemInterface;
 use Contao\CoreBundle\Monolog\ContaoContext;
-use Contao\Dbafs;
-use Contao\File;
-use Contao\Folder;
-use Contao\System;
-use Doctrine\ORM\EntityManagerInterface;
-use Markocupic\ZipBundle\Zip\Zip;
+use Markocupic\ContaoDbBackup\Event\DatabaseBackupEvent;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Filesystem\Path;
 
 class DatabaseBackupManager
 {
+    public const string FILE_PREFIX = 'contao_db_backup__';
+    public const string DATETIME_FORMAT = 'YmdHis';
+
     public function __construct(
-        private readonly ContaoFramework $framework,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly string $projectDir,
+        #[Autowire(service: 'contao.doctrine.backup_manager')]
+        private readonly BackupManager $backupManager,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly VirtualFilesystemInterface $backupsStorage,
+        private readonly VirtualFilesystemInterface $markocupicDbBackupsStorage,
+        #[Autowire('%markocupic_contao_db_backup.backup_dir%')]
+        private readonly string $backupDir,
+        #[Autowire('%markocupic_contao_db_backup.store_backup_files%')]
         private readonly int $storeBackupFiles,
         private readonly LoggerInterface|null $contaoGeneralLogger = null,
         private readonly LoggerInterface|null $contaoErrorLogger = null,
@@ -42,130 +50,102 @@ class DatabaseBackupManager
      */
     public function run(): void
     {
-        $this->framework->initialize();
+        // Delete old backup files
+        $this->deleteOldBackupFiles();
 
-        $filename = 'contao_db_backup'.date('Y_m_d').'.sql';
-        $backupDir = Path::join(System::getContainer()->getParameter('contao.upload_path'), 'contao_db_backup');
+        // Create the backup configuration
+        $backup = $this->createNewBackup(new \DateTime('now'), self::DATETIME_FORMAT);
+        $config = new CreateConfig($backup);
+        $config = $config->withTablesToIgnore([]);
 
-        $tempSrc = $backupDir.'/'.$filename;
-        $zipSrc = $backupDir.'/'.$filename.'.zip';
+        // Start backup
+        $this->backupManager->create($config);
 
-        // Create backup folder if not exists
-        new Folder($backupDir);
+        // Read the file from the source and write to the destination
+        $stream = $this->backupsStorage->readStream($backup->getFilename());
+        $this->markocupicDbBackupsStorage->writeStream($backup->getFilename(), $stream);
 
-        // Skip routine if backup already exists
-        if (file_exists(Path::makeAbsolute($zipSrc, $this->projectDir))) {
+        if (\is_resource($stream)) {
+            fclose($stream);
+        }
+
+        // Delete the original file
+        if ($this->backupsStorage->has($backup->getFilename())) {
+            $this->backupsStorage->delete($backup->getFilename());
+        }
+
+        // Get the backup file from virtual filesystem
+        $backupFile = $this->markocupicDbBackupsStorage->get($backup->getFilename());
+
+        // Dispatch the database backup event
+        $event = new DatabaseBackupEvent($this->markocupicDbBackupsStorage, $backupFile);
+        $this->eventDispatcher->dispatch($event);
+
+        if (null === $backupFile) {
+            $log = sprintf(
+                'Database backup failed for "%s".',
+                Path::join($this->backupDir, $backup->getFilename()),
+            );
+
+            $this->contaoErrorLogger?->error($log);
+
             return;
         }
 
-        // Delete old archives
-        $this->deleteOldBackupArchives($backupDir);
+        $log = sprintf(
+            'Finished contao database backup and stored the database dump in ("%s").',
+            Path::join($this->backupDir, $backupFile->getPath()),
+        );
 
-        $hostname = $this->getDbHost();
-        $user = $this->getDbUser();
-        $password = $this->getDbPassword();
-        $dbname = $this->getDbName();
-
-        // Run db dump
-        if (false === $this->dump($tempSrc, $hostname, $user, $password, $dbname)) {
-            // Add an entry to the Contao system log.
-            $this->contaoErrorLogger?->error('Could not proceed contao database backup due to an error.');
-
-            return;
-        }
-
-        // Wait to be sure, the file is readable.
-        sleep(2);
-
-        if (file_exists(Path::makeAbsolute($tempSrc, $this->projectDir))) {
-            (new Zip())
-                ->stripSourcePath(\dirname(Path::makeAbsolute($tempSrc, $this->projectDir)))
-                ->addFile(Path::makeAbsolute($tempSrc, $this->projectDir))
-                ->run(Path::makeAbsolute($zipSrc, $this->projectDir))
-             ;
-
-            Dbafs::addResource($zipSrc);
-
-            // Delete temp file
-            $objTempFile = new File($tempSrc);
-            $objTempFile->delete();
-
-            $log = "Finished contao database backup and stored the database dump in ('".$zipSrc."').";
-
-            $this->contaoGeneralLogger?->info($log, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
-        }
+        $this->contaoGeneralLogger?->info($log, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
     }
 
-    /**
-     * @throws \Exception
-     */
-    protected function deleteOldBackupArchives(string $backupDir): void
+    protected function createNewBackup(\DateTime $dateTime, string $dateTimeFormat): Backup
     {
-        // Delete database backup files
-        $arrFiles = Folder::scan($this->projectDir.'/'.$backupDir);
+        // Use the server time zone
+        // $dateTimeFormat->setTimezone(new \DateTimeZone('UTC'));
 
-        foreach ($arrFiles as $strFile) {
-            if (0 !== strncmp('.', $strFile, 1) && is_file(Path::join($this->projectDir, $backupDir, $strFile))) {
-                $objFile = new File(path::join($backupDir, $strFile));
+        $filename = sprintf(self::FILE_PREFIX.'%s.sql.gz', $dateTime->format($dateTimeFormat));
 
-                if ($objFile->mtime > 0) {
-                    if (time() - $objFile->mtime > $this->storeBackupFiles * 24 * 3600) {
-                        $log = sprintf('Delete old database backup file "%s".', $objFile->path);
-                        $this->contaoGeneralLogger?->info($log, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
-                        $objFile->delete();
-                    }
-                }
+        return new Backup($filename);
+    }
+
+    protected function deleteOldBackupFiles(): void
+    {
+        foreach ($this->markocupicDbBackupsStorage->listContents('', false, VirtualFilesystemInterface::BYPASS_DBAFS)->files() as $file) {
+            $fileMakeTime = $this->getMkTimeFromFileName($file->getName());
+
+            if (null === $fileMakeTime) {
+                continue;
+            }
+
+            if (strtotime('midnight') - $fileMakeTime >= $this->storeBackupFiles * 24 * 3600) {
+                $log = sprintf(
+                    'Deleted old database backup file "%s".',
+                    Path::join($this->backupDir, $file->getPath()),
+                );
+
+                $this->contaoGeneralLogger?->info($log, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
+
+                // Delete old backup file
+                $this->markocupicDbBackupsStorage->delete($file->getPath());
             }
         }
     }
 
-    protected function dump($tempSrc, string $host, string $user, string $password, string $dbname): string|false
+    protected function getMkTimeFromFileName(string $strFileName): int|null
     {
-        try {
-            if (empty($host) || empty($user) || empty($password) || empty($dbname)) {
-                throw new \Exception('Could not load database params (host, user, password or dbname)');
-            }
+        $strPart = rtrim($strFileName, '.gz');
+        $strPart = rtrim($strPart, '.zip');
+        $strPart = rtrim($strPart, '.sql');
+        $mkDate = ltrim($strPart, self::FILE_PREFIX);
 
-            $sqlCommand = '/usr/bin/mysqldump -h '.$host.' -u '.$user.' -p"'.$password.'" '.$dbname.' > '.Path::join($this->projectDir, $tempSrc);
-            $result = exec($sqlCommand);
-        } catch (\Exception $e) {
-            $log = 'Could not proceed contao database backup due to an error: '.$e->getMessage();
-            $this->contaoErrorLogger?->error($log, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
+        $objDateTime = \DateTime::createFromFormat(self::DATETIME_FORMAT, $mkDate);
+
+        if (false === $objDateTime) {
+            return null;
         }
 
-        return $result ?? false;
-    }
-
-    protected function getDbConnectionParams(): array
-    {
-        return $this->entityManager->getConnection()->getParams();
-    }
-
-    protected function getDbHost(): string
-    {
-        $configuration = $this->getDbConnectionParams();
-
-        return $configuration['host'] ?? '';
-    }
-
-    protected function getDbUser(): string
-    {
-        $configuration = $this->getDbConnectionParams();
-
-        return $configuration['user'] ?? '';
-    }
-
-    protected function getDbPassword(): string
-    {
-        $configuration = $this->getDbConnectionParams();
-
-        return $configuration['password'] ?? '';
-    }
-
-    protected function getDbName(): string
-    {
-        $configuration = $this->getDbConnectionParams();
-
-        return $configuration['dbname'] ?? '';
+        return strtotime('midnight', $objDateTime->getTimestamp());
     }
 }

@@ -3,10 +3,7 @@ services:
         autowire: true
         autoconfigure: true
         public: true
-        bind:
-            $projectDir: '%kernel.project_dir%'
-            $storeBackupFiles: '%markocupic_contao_db_backup.store_backup_files%'
 
     Markocupic\ContaoDbBackup\:
         resource: ../src/
-        exclude: ../src/{DependencyInjection}
+        exclude: ../src/{DependencyInjection,Event}
