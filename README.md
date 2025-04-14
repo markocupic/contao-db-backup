@@ -2,8 +2,8 @@
 
 # Daily database backup for Contao CMS
 
-This Contao extension creates a daily database backup via a cron job and saves it as a gz-compressed SQL dump in “files/contao-db-backup”.
-The storage location, the cron interval and the number of days that backups can be stored are configurable.
+This Contao extension creates by default a daily database backup via a cron job and saves it as a gz-compressed SQL dump in `files/contao-db-backup`.
+The storage location, the cron intervals and the number of days that backups can be stored are configurable.
 
 
 ## Configuration
@@ -13,7 +13,10 @@ The storage location, the cron interval and the number of days that backups can 
 markocupic_contao_db_backup:
   store_backup_files: 60 # Store backup files for 60 days
   backup_dir: '%kernel.project_dir%/my_secret_db_backup_dir' # Default %kernel.project_dir%/files/contao-db-backup
-  cron_interval: '* */1 * * *' # Run the cron hourly (default: daily)
+  cron_intervals:
+    - 'daily' # Run the cron job daily (default)
+    - '0 4 * * *' # Run the cron job every day at 4:00 AM
+    - '* */1 * * *' # Run the cron hourly
 ```
 
 ## Command

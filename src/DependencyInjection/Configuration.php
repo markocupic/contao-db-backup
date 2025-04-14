@@ -34,9 +34,9 @@ class Configuration implements ConfigurationInterface
                     ->cannotBeEmpty()
                     ->defaultValue('%kernel.project_dir%/%contao.upload_path%/contao-db-backup')
                 ->end()
-                ->scalarNode('cron_interval')
-                    ->cannotBeEmpty()
-                    ->defaultValue('daily')
+                ->arrayNode('cron_intervals')
+                    ->scalarPrototype()
+                    ->defaultValue(['daily', '*/1 * * * *'])
                 ->end()
             ->end()
         ;
