@@ -14,10 +14,8 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoDbBackup\Cron;
 
-use Contao\CoreBundle\DependencyInjection\Attribute\AsCronJob;
 use Markocupic\ContaoDbBackup\Backup\DatabaseBackupManager;
 
-#[AsCronJob('daily')]
 class DatabaseBackupCron
 {
     public function __construct(

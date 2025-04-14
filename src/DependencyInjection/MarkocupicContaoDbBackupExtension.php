@@ -16,6 +16,7 @@ namespace Markocupic\ContaoDbBackup\DependencyInjection;
 
 use Contao\CoreBundle\DependencyInjection\Filesystem\ConfigureFilesystemInterface;
 use Contao\CoreBundle\DependencyInjection\Filesystem\FilesystemConfiguration;
+use Markocupic\ContaoDbBackup\Cron\DatabaseBackupCron;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -41,6 +42,10 @@ class MarkocupicContaoDbBackupExtension extends Extension implements ConfigureFi
         $rootKey = $this->getAlias();
         $container->setParameter($rootKey.'.store_backup_files', $config['store_backup_files']);
         $container->setParameter($rootKey.'.backup_dir', $config['backup_dir']);
+        $container->setParameter($rootKey.'.cron_interval', $config['cron_interval']);
+
+        // Configure the cron interval from configuration
+        $this->configureCron($container);
     }
 
     /**
@@ -53,7 +58,7 @@ class MarkocupicContaoDbBackupExtension extends Extension implements ConfigureFi
 
     public function configureFilesystem(FilesystemConfiguration $config): void
     {
-        $storageName = 'markocupic_db_backups';
+        $storageName = 'markocupic_database_backups';
 
         $backupPath = $config->getContainer()->getParameterBag()->resolveValue('%markocupic_contao_db_backup.backup_dir%');
 
@@ -61,5 +66,22 @@ class MarkocupicContaoDbBackupExtension extends Extension implements ConfigureFi
             ->mountLocalAdapter($backupPath, $storageName, $storageName)
             ->addVirtualFilesystem($storageName, $storageName)
         ;
+    }
+
+    /**
+     * Configures the cron job for the database backup service
+     * by tagging it with the specified interval.
+     *
+     * @param ContainerBuilder $container The container builder instance
+     */
+    public function configureCron(ContainerBuilder $container): void
+    {
+        // Check if the service definition exists
+        if ($container->hasDefinition(DatabaseBackupCron::class)) {
+            $definition = $container->getDefinition(DatabaseBackupCron::class);
+            $definition->addTag('contao.cronjob', [
+                'interval' => $container->getParameter('markocupic_contao_db_backup.cron_interval'),
+            ]);
+        }
     }
 }

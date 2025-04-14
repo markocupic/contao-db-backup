@@ -27,12 +27,17 @@ class Configuration implements ConfigurationInterface
 
         $treeBuilder->getRootNode()
             ->children()
-            ->integerNode('store_backup_files')
-            ->defaultValue(30)
-            ->end()
-            ->scalarNode('backup_dir')
-            ->defaultValue('%kernel.project_dir%/%contao.upload_path%/contao-db-backup')
-            ->end()
+                ->integerNode('store_backup_files')
+                    ->defaultValue(30)
+                ->end()
+                ->scalarNode('backup_dir')
+                    ->cannotBeEmpty()
+                    ->defaultValue('%kernel.project_dir%/%contao.upload_path%/contao-db-backup')
+                ->end()
+                ->scalarNode('cron_interval')
+                    ->cannotBeEmpty()
+                    ->defaultValue('daily')
+                ->end()
             ->end()
         ;
 

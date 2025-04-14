@@ -14,28 +14,35 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoDbBackup\Command;
 
-use Contao\CoreBundle\Cron\Cron;
 use Markocupic\ContaoDbBackup\Backup\DatabaseBackupManager;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(
+    name: 'markocupic:database-backup',
+    description: 'Runs a database backup on the command line.',
+)]
 class DatabaseBackupCommand extends Command
 {
-    protected static $defaultName = 'contao:markocupic-database-backup';
-    protected static $defaultDescription = 'Runs a database backup on the command line.';
-
-    protected Cron $cron;
-
     public function __construct(
-        private readonly DatabaseBackupManager $dbBackupManager,
+        private readonly DatabaseBackupManager $databaseBackupManager,
     ) {
         parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->dbBackupManager->run();
+        $output->getFormatter()->setStyle('success', new OutputFormatterStyle('green'));
+        $output->getFormatter()->setStyle('error', new OutputFormatterStyle('red'));
+
+        if ($this->databaseBackupManager->run()) {
+            $output->writeln('<success>Database backup was successful.</success>');
+        } else {
+            $output->writeln('<error>Database backup failed.</error>');
+        }
 
         return 0;
     }

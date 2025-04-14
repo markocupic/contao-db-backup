@@ -17,6 +17,7 @@ namespace Markocupic\ContaoDbBackup\Backup;
 use Contao\CoreBundle\Doctrine\Backup\Backup;
 use Contao\CoreBundle\Doctrine\Backup\BackupManager;
 use Contao\CoreBundle\Doctrine\Backup\Config\CreateConfig;
+use Contao\CoreBundle\Filesystem\FilesystemItem;
 use Contao\CoreBundle\Filesystem\VirtualFilesystemInterface;
 use Contao\CoreBundle\Monolog\ContaoContext;
 use Markocupic\ContaoDbBackup\Event\DatabaseBackupEvent;
@@ -35,7 +36,7 @@ class DatabaseBackupManager
         private readonly BackupManager $backupManager,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly VirtualFilesystemInterface $backupsStorage,
-        private readonly VirtualFilesystemInterface $markocupicDbBackupsStorage,
+        private readonly VirtualFilesystemInterface $markocupicDatabaseBackupsStorage,
         #[Autowire('%markocupic_contao_db_backup.backup_dir%')]
         private readonly string $backupDir,
         #[Autowire('%markocupic_contao_db_backup.store_backup_files%')]
@@ -48,7 +49,7 @@ class DatabaseBackupManager
     /**
      * @throws \Exception
      */
-    public function run(): void
+    public function run(): bool
     {
         // Delete old backup files
         $this->deleteOldBackupFiles();
@@ -63,7 +64,7 @@ class DatabaseBackupManager
 
         // Read the file from the source and write to the destination
         $stream = $this->backupsStorage->readStream($backup->getFilename());
-        $this->markocupicDbBackupsStorage->writeStream($backup->getFilename(), $stream);
+        $this->markocupicDatabaseBackupsStorage->writeStream($backup->getFilename(), $stream);
 
         if (\is_resource($stream)) {
             fclose($stream);
@@ -75,29 +76,31 @@ class DatabaseBackupManager
         }
 
         // Get the backup file from virtual filesystem
-        $backupFile = $this->markocupicDbBackupsStorage->get($backup->getFilename());
+        $backupFile = $this->markocupicDatabaseBackupsStorage->get($backup->getFilename());
 
         // Dispatch the database backup event
-        $event = new DatabaseBackupEvent($this->markocupicDbBackupsStorage, $backupFile);
+        $event = new DatabaseBackupEvent($this->markocupicDatabaseBackupsStorage, $backupFile);
         $this->eventDispatcher->dispatch($event);
 
         if (null === $backupFile) {
-            $log = sprintf(
+            $logText = sprintf(
                 'Database backup failed for "%s".',
                 Path::join($this->backupDir, $backup->getFilename()),
             );
 
-            $this->contaoErrorLogger?->error($log);
+            $this->contaoErrorLogger?->error($logText);
 
-            return;
+            return false;
         }
 
-        $log = sprintf(
+        $logText = sprintf(
             'Finished contao database backup and stored the database dump in ("%s").',
             Path::join($this->backupDir, $backupFile->getPath()),
         );
 
-        $this->contaoGeneralLogger?->info($log, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
+        $this->contaoGeneralLogger?->info($logText, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
+
+        return true;
     }
 
     protected function createNewBackup(\DateTime $dateTime, string $dateTimeFormat): Backup
@@ -112,40 +115,38 @@ class DatabaseBackupManager
 
     protected function deleteOldBackupFiles(): void
     {
-        foreach ($this->markocupicDbBackupsStorage->listContents('', false, VirtualFilesystemInterface::BYPASS_DBAFS)->files() as $file) {
-            $fileMakeTime = $this->getMkTimeFromFileName($file->getName());
+        foreach ($this->markocupicDatabaseBackupsStorage->listContents('', false, VirtualFilesystemInterface::BYPASS_DBAFS)->files() as $backupFile) {
+            $fileCreationTimestamp = $this->getFileCreationTimestamp($backupFile);
 
-            if (null === $fileMakeTime) {
+            if (null === $fileCreationTimestamp) {
                 continue;
             }
 
-            if (strtotime('midnight') - $fileMakeTime >= $this->storeBackupFiles * 24 * 3600) {
-                $log = sprintf(
+            if (strtotime('midnight') - $fileCreationTimestamp >= $this->storeBackupFiles * 24 * 3600) {
+                $logText = sprintf(
                     'Deleted old database backup file "%s".',
-                    Path::join($this->backupDir, $file->getPath()),
+                    Path::join($this->backupDir, $backupFile->getPath()),
                 );
 
-                $this->contaoGeneralLogger?->info($log, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
+                $this->contaoGeneralLogger?->info($logText, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
 
                 // Delete old backup file
-                $this->markocupicDbBackupsStorage->delete($file->getPath());
+                $this->markocupicDatabaseBackupsStorage->delete($backupFile->getPath());
             }
         }
     }
 
-    protected function getMkTimeFromFileName(string $strFileName): int|null
+    protected function getFileCreationTimestamp(FilesystemItem $backupFile): int|null
     {
-        $strPart = rtrim($strFileName, '.gz');
-        $strPart = rtrim($strPart, '.zip');
-        $strPart = rtrim($strPart, '.sql');
-        $mkDate = ltrim($strPart, self::FILE_PREFIX);
+        $filenameWithoutExtensions = rtrim(rtrim($backupFile->getName(), '.sql.gz'), '.sql');
+        $dateStr = ltrim($filenameWithoutExtensions, self::FILE_PREFIX);
 
-        $objDateTime = \DateTime::createFromFormat(self::DATETIME_FORMAT, $mkDate);
+        $dateTime = \DateTime::createFromFormat(self::DATETIME_FORMAT, $dateStr);
 
-        if (false === $objDateTime) {
+        if (false === $dateTime) {
             return null;
         }
 
-        return strtotime('midnight', $objDateTime->getTimestamp());
+        return strtotime('midnight', $dateTime->getTimestamp());
     }
 }

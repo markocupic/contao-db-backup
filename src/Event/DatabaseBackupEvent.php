@@ -21,14 +21,14 @@ use Symfony\Contracts\EventDispatcher\Event;
 class DatabaseBackupEvent extends Event
 {
     public function __construct(
-        private readonly VirtualFilesystemInterface $markocupicDbBackupsStorage,
+        private readonly VirtualFilesystemInterface $markocupicDatabaseBackupsStorage,
         private readonly FilesystemItem|null $backupFile,
     ) {
     }
 
     public function getDatabaseBackupsStorage(): VirtualFilesystemInterface
     {
-        return $this->markocupicDbBackupsStorage;
+        return $this->markocupicDatabaseBackupsStorage;
     }
 
     public function getBackupFile(): FilesystemItem|null
