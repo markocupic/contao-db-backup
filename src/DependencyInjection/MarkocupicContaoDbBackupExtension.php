@@ -56,6 +56,11 @@ class MarkocupicContaoDbBackupExtension extends Extension implements ConfigureFi
         return Configuration::ROOT_KEY;
     }
 
+    /**
+     * Configures the filesystem with a local adapter and adds a virtual filesystem.
+     *
+     * @param FilesystemConfiguration $config The filesystem configuration instance.
+     */
     public function configureFilesystem(FilesystemConfiguration $config): void
     {
         $storageName = 'markocupic_database_backups';
