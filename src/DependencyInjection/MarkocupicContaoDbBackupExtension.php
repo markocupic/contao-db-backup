@@ -40,9 +40,11 @@ class MarkocupicContaoDbBackupExtension extends Extension implements ConfigureFi
         $loader->load('services.yaml');
 
         $rootKey = $this->getAlias();
-        $container->setParameter($rootKey.'.store_backup_files', $config['store_backup_files']);
         $container->setParameter($rootKey.'.backup_dir', $config['backup_dir']);
         $container->setParameter($rootKey.'.cron_intervals', $config['cron_intervals']);
+        $container->setParameter($rootKey.'.ignore_tables', $config['ignore_tables']);
+        $container->setParameter($rootKey.'.keep_max', $config['keep_max']);
+        $container->setParameter($rootKey.'.keep_intervals', $config['keep_intervals']);
 
         // Configure the cron interval from configuration
         $this->configureCron($container);

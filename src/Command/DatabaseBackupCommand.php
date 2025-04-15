@@ -22,7 +22,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'markocupic:database-backup',
+    name: 'markocupic:backup:create',
     description: 'Runs a database backup on the command line.',
 )]
 class DatabaseBackupCommand extends Command
@@ -39,9 +39,9 @@ class DatabaseBackupCommand extends Command
         $output->getFormatter()->setStyle('error', new OutputFormatterStyle('red'));
 
         if ($this->databaseBackupManager->run()) {
-            $output->writeln('<success>Database backup was successful.</success>');
+            $output->writeln('<success>The database backup was performed successfully.</success>');
         } else {
-            $output->writeln('<error>Database backup failed.</error>');
+            $output->writeln('<error>The database backup could not be performed successfully.</error>');
         }
 
         return 0;
