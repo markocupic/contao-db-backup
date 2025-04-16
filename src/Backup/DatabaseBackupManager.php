@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Markocupic\ContaoDbBackup\Backup;
 
 use Contao\CoreBundle\Doctrine\Backup\Backup;
+use Contao\CoreBundle\Doctrine\Backup\BackupManager;
 use Contao\CoreBundle\Doctrine\Backup\Config\CreateConfig;
 use Contao\CoreBundle\Filesystem\VirtualFilesystemInterface;
 use Contao\CoreBundle\Monolog\ContaoContext;
@@ -35,7 +36,8 @@ class DatabaseBackupManager
     public const string FILE_PREFIX = 'contao_db_backup__';
 
     public function __construct(
-        private readonly BackupManagerFactory $backupManagerFactory,
+        #[Autowire(service: 'markocupic_contao_db_backup.doctrine.backup_manager')]
+        private readonly BackupManager $backupManager,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly VirtualFilesystemInterface $markocupicDatabaseBackupsStorage,
         #[Autowire('%markocupic_contao_db_backup.backup_dir%')]
@@ -70,11 +72,8 @@ class DatabaseBackupManager
             $backup = $config->getBackup();
         }
 
-        // Use the Contao Core backup manager with a customized virtual filesystem
-        $backupManager = $this->backupManagerFactory->create();
-
         // Start backup
-        $backupManager->create($config);
+        $this->backupManager->create($config);
 
         // Get the backup file from virtual filesystem
         $backupFile = $this->markocupicDatabaseBackupsStorage->get($backup->getFilename());
@@ -95,7 +94,7 @@ class DatabaseBackupManager
         }
 
         $logText = sprintf(
-            'Successfully performed database backup and stored the database dump under ("%s").',
+            'Successfully performed the database backup and stored the database dump under ("%s").',
             Path::join($this->backupDir, $backupFile->getPath()),
         );
 

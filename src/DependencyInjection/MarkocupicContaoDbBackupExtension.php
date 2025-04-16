@@ -46,6 +46,9 @@ class MarkocupicContaoDbBackupExtension extends Extension implements ConfigureFi
         $container->setParameter($rootKey.'.keep_max', $config['keep_max']);
         $container->setParameter($rootKey.'.keep_intervals', $config['keep_intervals']);
 
+        // Inject configuration to the backup services
+        $this->handleBackup($config, $container);
+
         // Configure the cron interval from configuration
         $this->configureCron($container);
     }
@@ -96,5 +99,23 @@ class MarkocupicContaoDbBackupExtension extends Extension implements ConfigureFi
                 }
             }
         }
+    }
+
+    private function handleBackup(array $config, ContainerBuilder $container): void
+    {
+        if (!$container->hasDefinition('markocupic_contao_db_backup.doctrine.backup_manager')) {
+            return;
+        }
+
+        if (!$container->hasDefinition('markocupic_contao_db_backup.doctrine.backup.retention_policy')) {
+            return;
+        }
+
+        $retentionPolicy = $container->getDefinition('markocupic_contao_db_backup.doctrine.backup.retention_policy');
+        $retentionPolicy->setArgument(0, $config['keep_max']);
+        $retentionPolicy->setArgument(1, $config['keep_intervals']);
+
+        $dbDumper = $container->getDefinition('markocupic_contao_db_backup.doctrine.backup_manager');
+        $dbDumper->setArgument(3, $config['ignore_tables']);
     }
 }
