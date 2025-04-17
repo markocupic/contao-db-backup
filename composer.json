@@ -22,7 +22,7 @@
     },
     "require": {
         "php": "^8.3",
-        "contao/core-bundle": "^4.13 || ^5.0",
+        "contao/core-bundle": "^5.3",
         "symfony/dependency-injection": "^6.1 || ^7.0"
     },
     "require-dev": {

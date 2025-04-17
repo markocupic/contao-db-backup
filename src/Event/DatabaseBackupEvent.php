@@ -22,6 +22,7 @@ class DatabaseBackupEvent extends Event
 {
     public function __construct(
         private readonly VirtualFilesystemInterface $markocupicDatabaseBackupsStorage,
+        private readonly bool $success,
         private readonly FilesystemItem|null $backupFile,
     ) {
     }
@@ -29,6 +30,11 @@ class DatabaseBackupEvent extends Event
     public function getDatabaseBackupsStorage(): VirtualFilesystemInterface
     {
         return $this->markocupicDatabaseBackupsStorage;
+    }
+
+    public function isSuccess(): bool
+    {
+        return $this->success;
     }
 
     public function getBackupFile(): FilesystemItem|null

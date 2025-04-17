@@ -8,19 +8,3 @@ services:
         resource: ../src/
         exclude: ../src/{DependencyInjection,Event}
 
-    markocupic_contao_db_backup.doctrine.backup.dumper:
-        class: Contao\CoreBundle\Doctrine\Backup\Dumper
-
-    markocupic_contao_db_backup.doctrine.backup.retention_policy:
-        class: Contao\CoreBundle\Doctrine\Backup\RetentionPolicy
-        arguments:
-            - 0
-
-    markocupic_contao_db_backup.doctrine.backup_manager:
-        class: Contao\CoreBundle\Doctrine\Backup\BackupManager
-        arguments:
-            - '@database_connection'
-            - '@markocupic_contao_db_backup.doctrine.backup.dumper'
-            - '@contao.filesystem.virtual.markocupic_database_backups'
-            - [ ]
-            - '@markocupic_contao_db_backup.doctrine.backup.retention_policy'
