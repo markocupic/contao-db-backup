@@ -22,7 +22,10 @@ use Markocupic\ContaoDbBackup\MarkocupicContaoDbBackup;
 
 class Plugin implements BundlePluginInterface
 {
-    public function getBundles(ParserInterface $parser)
+    /**
+     * {@inheritdoc}
+     */
+    public function getBundles(ParserInterface $parser): array
     {
         return [
             BundleConfig::create(MarkocupicContaoDbBackup::class)
