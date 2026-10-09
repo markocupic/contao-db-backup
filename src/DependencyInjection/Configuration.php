@@ -27,6 +27,13 @@ class Configuration implements ConfigurationInterface
 
         $treeBuilder->getRootNode()
             ->children()
+                // Removed in version 2: the backup manager of the Contao core uses the
+                // "contao.backup.keep_max" and "contao.backup.keep_intervals" options.
+                // The option is still accepted, so that existing configurations do not
+                // break the container.
+                ->integerNode('store_backup_files')
+                    ->setDeprecated('markocupic/contao-db-backup', '2.0', 'The "%node%" option is no longer used. Configure "contao.backup.keep_max" and "contao.backup.keep_intervals" instead.')
+                ->end()
                 ->arrayNode('cron_intervals')
                     ->prototype('scalar')->end()
                     ->info('Use one or more cron formats to execute the backup at a specific time. You can also use the text representation of the cron format "yearly", "monthly", "weekly", "daily", "hourly", "minutely".')

@@ -27,6 +27,14 @@ contao:
         keep_intervals: [ 'T15M','T30M','T45M','T2H','T4H','T6H','T12H','1D','2D','3D','4D','5D','6D','7D','1M','2M','3M','4M','5M','6M' ]
 ```
 
+## Upgrading from version 1
+
+Version 1 created the backups with `mysqldump` in `files/contao_db_backup`. Since version 2 the backup manager of the Contao core is used:
+
+- The backups are stored in `var/backups` (as `.sql.gz` files) instead of `files/contao_db_backup`. Old backups are not moved or deleted.
+- The option `markocupic_contao_db_backup.store_backup_files` is no longer used. Configure `contao.backup.keep_max` and `contao.backup.keep_intervals` instead (see above).
+- `exec()` and `mysqldump` are no longer required.
+
 ## Command
 
 To execute the database backup on the command line, you can run `php vendor/bin/contao-console contao:backup:create`
