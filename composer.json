@@ -1,12 +1,12 @@
 {
     "name": "markocupic/contao-db-backup",
-    "description": "Store a daily backup of your database to the contao file system using a daily cronjob routine.",
+    "description": "Creates database backups with the Contao backup manager using a configurable cron job (Contao 5.3 and Contao 6).",
     "keywords": [
         "contao",
         "database",
         "backup"
     ],
-    "type": "contao-module",
+    "type": "contao-bundle",
     "license": "MIT",
     "authors": [
         {
@@ -21,35 +21,52 @@
         "source": "https://github.com/markocupic/contao-db-backup"
     },
     "require": {
-        "php": "^8.1",
-        "contao/core-bundle": "^4.13 || ^5.0",
-        "markocupic/zip-bundle": "^1.1"
+        "php": "^8.3",
+        "contao/core-bundle": "^5.3 || ^6.0",
+        "guzzlehttp/promises": "^2.0",
+        "psr/log": "^1.1 || ^2.0 || ^3.0",
+        "symfony/config": "^6.4 || ^7.0 || ^8.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+        "symfony/event-dispatcher": "^6.4 || ^7.0 || ^8.0",
+        "symfony/event-dispatcher-contracts": "^3.0",
+        "symfony/filesystem": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0"
     },
     "require-dev": {
-        "contao/manager-plugin": "^2.3.1",
-        "contao/test-case": "^4.5",
-        "phpunit/phpunit": "^9.3",
-        "symfony/http-client": "5.4.*",
-        "symfony/phpunit-bridge": "^5.4",
-        "contao/easy-coding-standard": "^5.0"
+        "contao/manager-plugin": "^2.12",
+        "contao/test-case": "^5.3 || ^6.0"
+    },
+    "conflict": {
+        "contao/manager-plugin": "<2.0 || >=3.0"
     },
     "replace": {
         "contao-legacy/contao-db-backup": "self.version"
-    },
-    "config": {
-        "allow-plugins": {
-            "contao-components/installer": true,
-            "contao/manager-plugin": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true,
-            "contao-community-alliance/composer-plugin": true
-        }
     },
     "autoload": {
         "psr-4": {
             "Markocupic\\ContaoDbBackup\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Markocupic\\ContaoDbBackup\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "contao-components/installer": false,
+            "contao/manager-plugin": false,
+            "php-http/discovery": false,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "contao-community-alliance/composer-plugin": true
+        }
+    },
     "extra": {
         "contao-manager-plugin": "Markocupic\\ContaoDbBackup\\ContaoManager\\Plugin"
+    },
+    "scripts": {
+        "cs-fixer": "@php .ecs/vendor/bin/ecs check --config .ecs/config/default.php --fix --ansi",
+        "cs-check": "@php .ecs/vendor/bin/ecs check --config .ecs/config/default.php --ansi",
+        "unit-tests": "@php vendor/bin/phpunit --colors=always"
     }
 }

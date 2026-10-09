@@ -2,16 +2,47 @@
 
 # Daily database backup for Contao CMS
 
-This Contao extension creates a daily database backup via a cron job and saves it as an SQL dump in the file system.
-For the plugin to work, the execution of the PHP function “exec()” must be enabled on the hosting.
+This extension for [Contao CMS](https://contao.org) uses the backup manager of the Contao core and creates a daily database backup via a cron job by default.
+The backup files are stored under `var/backups`.
+
+## Requirements
+
+- Contao 5.3 or later, including Contao 6
+- PHP 8.3 or later
 
 ## Configuration
-
-By default, the backup files remain on the server for 30 d and are then automatically deleted.
-However, the time before the deletion process can be configured.
 
 ```
 # In your config/config.yaml
 markocupic_contao_db_backup:
-  store_backup_files: 60 # Store backup files for 60 days
+    cron_intervals:
+        - '0 4 * * *' # Create a backup every day at 4.00 AM (multiple cron jobs possible)
+
+contao:
+    backup:
+        ignore_tables: [ 'tl_crawl_queue', 'tl_log', 'tl_search', 'tl_search_index', 'tl_search_term' ] # default
+        keep_max: 40 # Keep 40 backup files (default 5)
+        # https://docs.contao.org/manual/en/cli/db-backups/#configuration
+        # time elements (H, M und S) must be prefixed with "T"
+        keep_intervals: [ 'T15M','T30M','T45M','T2H','T4H','T6H','T12H','1D','2D','3D','4D','5D','6D','7D','1M','2M','3M','4M','5M','6M' ]
 ```
+
+## Upgrading from version 1
+
+Version 1 created the backups with `mysqldump` in `files/contao_db_backup`. Since version 2 the backup manager of the Contao core is used:
+
+- The backups are stored in `var/backups` (as `.sql.gz` files) instead of `files/contao_db_backup`. Old backups are not moved or deleted.
+- The option `markocupic_contao_db_backup.store_backup_files` is no longer used. Configure `contao.backup.keep_max` and `contao.backup.keep_intervals` instead (see above).
+- `exec()` and `mysqldump` are no longer required.
+
+## Command
+
+To execute the database backup on the command line, you can run `php vendor/bin/contao-console contao:backup:create`
+
+To show the existing backups you can run `php vendor/bin/contao-console contao:backup:list` on the command line.
+
+To restore the database you can run `php vendor/bin/contao-console contao:backup:restore backup__20220126153243.sql.gz` on the command line.
+
+## Learn more
+
+https://docs.contao.org/manual/de/cli/datenbank-backups/
