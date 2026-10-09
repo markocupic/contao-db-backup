@@ -2,8 +2,13 @@
 
 # Daily database backup for Contao CMS
 
-This extension for [Contao CMS](https://contao.org) uses the Contao Core Backup mBnager and creates by default a daily database backup via a cron job.
+This extension for [Contao CMS](https://contao.org) uses the backup manager of the Contao core and creates a daily database backup via a cron job by default.
 The backup files are stored under `var/backups`.
+
+## Requirements
+
+- Contao 5.3 or later, including Contao 6
+- PHP 8.3 or later
 
 ## Configuration
 
@@ -28,7 +33,7 @@ To execute the database backup on the command line, you can run `php vendor/bin/
 
 To show the existing backups you can run `php vendor/bin/contao-console contao:backup:list` on the command line.
 
-To show restore the database you can run `php vendor/bin/contao-console contao:backup:restore backup__20220126153243.sql.gz` on the command line.
+To restore the database you can run `php vendor/bin/contao-console contao:backup:restore backup__20220126153243.sql.gz` on the command line.
 
 ## Learn more
 

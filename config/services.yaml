@@ -2,9 +2,11 @@ services:
     _defaults:
         autowire: true
         autoconfigure: true
-        public: true
 
     Markocupic\ContaoDbBackup\:
         resource: ../src/
-        exclude: ../src/{DependencyInjection,Event}
-
+        exclude:
+            - ../src/ContaoManager/
+            - ../src/DependencyInjection/
+            - ../src/Event/
+            - ../src/MarkocupicContaoDbBackup.php

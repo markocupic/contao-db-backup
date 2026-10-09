@@ -26,13 +26,20 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Filesystem\Path;
 
+/**
+ * Creates a database backup with the backup manager of the Contao core. The
+ * backup is created in a separate "contao:backup:create" console process.
+ */
 readonly class BackupCron
 {
+    public const LOG_ACTION = 'CONTAO_DB_BACKUP';
+
     public function __construct(
         #[Autowire(service: 'contao.doctrine.backup_manager')]
         private BackupManager $backupManager,
         private EventDispatcherInterface $eventDispatcher,
         private ProcessUtil $processUtil,
+        #[Autowire(service: 'contao.filesystem.virtual.backups')]
         private VirtualFilesystemInterface $backupsStorage,
         #[Autowire('%kernel.project_dir%')]
         private string $projectDir,
@@ -41,56 +48,48 @@ readonly class BackupCron
     ) {
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function __invoke(string $scope): PromiseInterface
     {
         try {
-            $config = $this->backupManager->createCreateConfig();
-            $backup = $config->getBackup();
+            $backup = $this->backupManager->createCreateConfig()->getBackup();
 
             $process = $this->processUtil->createSymfonyConsoleProcess('contao:backup:create', $backup->getFilename());
             $process->setTimeout(null);
-            $promise = $this->processUtil->createPromise($process);
-
-            return $promise->then(
-                function ($value) use ($backup): void {
-                    $this->onBackupSuccess($backup);
-                },
-                function ($value) use ($backup): void {
-                    $this->onBackupError($backup);
-                },
-            );
         } catch (\Throwable $e) {
-            $this->contaoErrorLogger?->error(sprintf('The database backup could not be performed successfully. Error: %s', $e->getMessage()));
+            $this->contaoErrorLogger?->error(\sprintf('The database backup could not be performed successfully. Error: %s', $e->getMessage()), ['contao' => new ContaoContext(__METHOD__, self::LOG_ACTION)]);
+
+            throw $e;
         }
 
-        throw new $e();
+        return $this->processUtil->createPromise($process)->then(
+            fn () => $this->onBackupSuccess($backup),
+            fn (mixed $reason) => $this->onBackupError($backup, $reason),
+        );
     }
 
     private function onBackupSuccess(Backup $backup): void
     {
         $fileItem = $this->backupsStorage->get($backup->getFilename());
 
-        // Dispatch the database backup event
-        $event = new DatabaseBackupEvent($this->backupsStorage, true, $fileItem);
-        $this->dispatchEvent($event);
+        $this->eventDispatcher->dispatch(new DatabaseBackupEvent($this->backupsStorage, true, $fileItem));
 
-        $logText = sprintf(
+        $logText = \sprintf(
             'Successfully performed the database backup and stored the database dump under ("%s").',
             Path::join($this->projectDir, 'var/backups', $backup->getFilename()),
         );
 
-        $this->contaoGeneralLogger?->info($logText, ['contao' => new ContaoContext(__METHOD__, 'CONTAO_DB_BACKUP')]);
+        $this->contaoGeneralLogger?->info($logText, ['contao' => new ContaoContext(__METHOD__, self::LOG_ACTION)]);
     }
 
-    private function onBackupError(Backup $backup): void
+    private function onBackupError(Backup $backup, mixed $reason): void
     {
-        // Dispatch the database backup event
-        $event = new DatabaseBackupEvent($this->backupsStorage, false, null);
-        $this->dispatchEvent($event);
-    }
+        $this->eventDispatcher->dispatch(new DatabaseBackupEvent($this->backupsStorage, false, null));
 
-    private function dispatchEvent(DatabaseBackupEvent $event): void
-    {
-        $this->eventDispatcher->dispatch($event);
+        $error = $reason instanceof \Throwable ? $reason->getMessage() : 'unknown error';
+
+        $this->contaoErrorLogger?->error(\sprintf('The database backup "%s" could not be created. Error: %s', $backup->getFilename(), $error), ['contao' => new ContaoContext(__METHOD__, self::LOG_ACTION)]);
     }
 }

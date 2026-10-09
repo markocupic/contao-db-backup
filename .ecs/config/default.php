@@ -2,19 +2,26 @@
 
 declare(strict_types=1);
 
+use Contao\EasyCodingStandard\Set\SetList;
+use PhpCsFixer\Fixer\Comment\HeaderCommentFixer;
 use Symplify\EasyCodingStandard\Config\ECSConfig;
-use PhpCsFixer\Fixer\Whitespace\MethodChainingIndentationFixer;
+use Symplify\EasyCodingStandard\ValueObject\Option;
 
-return static function (ECSConfig $ECSConfig): void {
-    // Contao
-    $ECSConfig->import(__DIR__.'../../../../../contao/easy-coding-standard/config/contao.php');
-
-    $ECSConfig->skip([
-        MethodChainingIndentationFixer::class => [
-            'DependencyInjection/Configuration.php',
+return ECSConfig::configure()
+    ->withSets([SetList::CONTAO])
+    ->withPaths([
+        __DIR__.'/../../src',
+    ])
+    ->withSkip([
+        \Contao\EasyCodingStandard\Fixer\CommentLengthFixer::class => ['*.php'],
+        \PhpCsFixer\Fixer\Whitespace\MethodChainingIndentationFixer::class => [
+            '*/DependencyInjection/Configuration.php',
         ],
-    ]);
-
-    // Custom
-    $ECSConfig->import(__DIR__.'/set/header_comment_fixer.php');
-};
+    ])
+    ->withParallel()
+    ->withSpacing(Option::INDENTATION_SPACES, "\n")
+    ->withConfiguredRule(HeaderCommentFixer::class, [
+        'header' => "This file is part of Contao Database Backup.\n\n(c) Marko Cupic <m.cupic@gmx.ch>\n@license MIT\nFor the full copyright and license information,\nplease view the LICENSE file that was distributed with this source code.\n@link https://github.com/markocupic/contao-db-backup",
+    ])
+    ->withCache(sys_get_temp_dir().'/ecs/markocupic/contao-db-backup')
+;
